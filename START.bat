@@ -1,26 +1,47 @@
 @echo off
 setlocal
 
-echo Downloading PowerShell script...
-
-:: Download the PowerShell script
-powershell -Command "try { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/SCC-ONS-Backoffice/Autopilot-join-SSC-ONS/main/Tenant-join.ps1' -OutFile 'Tenant-join.ps1'; exit $LASTEXITCODE } catch { Write-Error 'Failed to download script.'; exit 1 }"
-if %ERRORLEVEL% neq 0 (
-    echo Failed to download the PowerShell script.
-    exit /b %ERRORLEVEL%
+:: Verwijder het oude PowerShell-script als het bestaat
+if exist "Tenant-join.ps1" (
+    echo Verwijderen van oude versie van Tenant-join.ps1...
+    del /f "Tenant-join.ps1" || (
+        echo Fout bij het verwijderen van de oude versie van het script. Foutcode: %ERRORLEVEL%
+        endlocal
+        exit /b %ERRORLEVEL%
+    )
 )
 
-echo Running PowerShell script...
+echo Bezig met het downloaden van het nieuwste PowerShell-script...
 
-:: Execute the downloaded PowerShell script with bypassed execution policy
+:: Download het PowerShell-script
+powershell -Command "try { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/SCC-ONS-Backoffice/Autopilot-join-SSC-ONS/main/Tenant-join.ps1' -OutFile 'Tenant-join.ps1' -UseBasicParsing; exit $LASTEXITCODE } catch { Write-Error 'Download van script mislukt.'; exit 1 }" 
+set "ERRORCODE=%ERRORLEVEL%"
+if %ERRORCODE% neq 0 (
+    echo Fout bij het downloaden van het PowerShell-script. Foutcode: %ERRORCODE%
+    endlocal
+    exit /b %ERRORCODE%
+)
+
+:: Controleer of het script succesvol is gedownload
+if not exist "Tenant-join.ps1" (
+    echo Het gedownloade PowerShell-script werd niet gevonden.
+    endlocal
+    exit /b 1
+)
+
+echo PowerShell-script uitvoeren...
+
+:: Voer het gedownloade PowerShell-script uit met omzeilde uitvoering
 powershell -ExecutionPolicy Bypass -File .\Tenant-join.ps1
-if %ERRORLEVEL% neq 0 (
-    echo PowerShell script execution failed.
-    exit /b %ERRORLEVEL%
+set "ERRORCODE=%ERRORLEVEL%"
+if %ERRORCODE% neq 0 (
+    echo Fout bij het uitvoeren van het PowerShell-script. Foutcode: %ERRORCODE%
+    endlocal
+    exit /b %ERRORCODE%
 )
 
-echo Script execution complete.
+echo Scriptuitvoering voltooid.
 
-:: End script
+:: Einde script
 endlocal
 exit /b 0
