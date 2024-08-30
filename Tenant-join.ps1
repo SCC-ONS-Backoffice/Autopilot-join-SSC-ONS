@@ -49,7 +49,7 @@ function Test-InternetConnection {
     return $false
 }
 
-# Functie om ervoor te zorgen dat de NuGet-pakketprovider en het script zijn geïnstalleerd
+# Functie om ervoor te zorgen dat de NuGet-pakketprovider en het script zijn geinstalleerd
 function Ensure-Environment {
     try {
         Write-Host "`nDe omgeving instellen..." -ForegroundColor Cyan
@@ -60,22 +60,22 @@ function Ensure-Environment {
         # Stel het beveiligingsprotocol in op TLS 1.2
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         
-        # Zorg ervoor dat de NuGet-pakketprovider is geïnstalleerd
-        Write-Host "Zorgen dat NuGet-pakketprovider is geïnstalleerd..." -ForegroundColor Cyan
+        # Zorg ervoor dat de NuGet-pakketprovider is geinstalleerd
+        Write-Host "Zorgen dat NuGet-pakketprovider is geinstalleerd..." -ForegroundColor Cyan
         if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
             Install-PackageProvider -Name NuGet -Force -Confirm:$false
-            Write-Host "NuGet-pakketprovider geïnstalleerd." -ForegroundColor Green
+            Write-Host "NuGet-pakketprovider geinstalleerd." -ForegroundColor Green
         } else {
-            Write-Host "NuGet-pakketprovider is al geïnstalleerd." -ForegroundColor Green
+            Write-Host "NuGet-pakketprovider is al geinstalleerd." -ForegroundColor Green
         }
 
-        # Zorg ervoor dat het Get-WindowsAutopilotInfo-script is geïnstalleerd
-        Write-Host "Zorgen dat het Get-WindowsAutopilotInfo-script is geïnstalleerd..." -ForegroundColor Cyan
+        # Zorg ervoor dat het Get-WindowsAutopilotInfo-script is geinstalleerd
+        Write-Host "Zorgen dat het Get-WindowsAutopilotInfo-script is geinstalleerd..." -ForegroundColor Cyan
         if (-not (Get-Command -Name Get-WindowsAutopilotInfo -ErrorAction SilentlyContinue)) {
             Install-Script -Name Get-WindowsAutopilotInfo -Force
-            Write-Host "Get-WindowsAutopilotInfo-script geïnstalleerd." -ForegroundColor Green
+            Write-Host "Get-WindowsAutopilotInfo-script geinstalleerd." -ForegroundColor Green
         } else {
-            Write-Host "Get-WindowsAutopilotInfo-script is al geïnstalleerd." -ForegroundColor Green
+            Write-Host "Get-WindowsAutopilotInfo-script is al geinstalleerd." -ForegroundColor Green
         }
     } catch {
         Write-Host "`n!! FOUT: De omgeving instellen is mislukt. $($_.Exception.Message) !!" -ForegroundColor Red
