@@ -52,7 +52,7 @@ function Ensure-Environment {
         
         # Zorg ervoor dat de NuGet-pakketprovider is geinstalleerd
         Write-Host "Zorgen dat NuGet-pakketprovider is geinstalleerd..." -ForegroundColor Cyan
-        if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+        if (-not (Get-PackageProvider -Name NuGet -Force -ErrorAction SilentlyContinue)) {
             Install-PackageProvider -Name NuGet -Force -Confirm:$false
             Write-Host "NuGet-pakketprovider geinstalleerd." -ForegroundColor Green
         } else {
