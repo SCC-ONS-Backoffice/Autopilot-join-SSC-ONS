@@ -1,44 +1,3 @@
-# Controleer of er beheerdersrechten zijn en start opnieuw met verhoogde rechten indien nodig
-function Ensure-RunAsAdministrator {
-    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-    if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-        Write-Host "Dit script vereist beheerdersrechten. Probeer opnieuw te starten als beheerder..." -ForegroundColor Yellow
-        Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
-        exit
-    }
-}
-
-# Schakel strikte foutafhandeling in
-$ErrorActionPreference = "Stop"
-
-# Functie om te testen op een actieve internetverbinding met automatische herhaling
-function Test-InternetConnection {
-    param (
-        [int]$retries = 3,
-        [int]$delay = 5
-    )
-
-    $url = "http://www.msftconnecttest.com/connecttest.txt"
-    
-    for ($i = 1; $i -le $retries; $i++) {
-        try {
-            Write-Host "Controleren op een actieve internetverbinding... (Poging $i van $retries)" -ForegroundColor Cyan
-            $request = [System.Net.WebRequest]::Create($url)
-            $request.Timeout = 5000
-            $request.Method = "HEAD"
-            $response = $request.GetResponse()
-            $response.Close()
-            return $true
-        } catch {
-            Write-Host "Geen internetverbinding gedetecteerd. Probeer opnieuw over $delay seconden..." -ForegroundColor Yellow
-            Start-Sleep -Seconds $delay
-        }
-    }
-
-    Write-Host "!! FOUT: Geen internetverbinding gedetecteerd na meerdere pogingen. !!" -ForegroundColor Red
-    return $false
-}
-
 # Functie om ervoor te zorgen dat de NuGet-pakketprovider en het script zijn geinstalleerd
 function Ensure-Environment {
     try {
@@ -52,8 +11,8 @@ function Ensure-Environment {
         
         # Zorg ervoor dat de NuGet-pakketprovider is geinstalleerd
         Write-Host "Zorgen dat NuGet-pakketprovider is geinstalleerd..." -ForegroundColor Cyan
-        if (-not (Get-PackageProvider -Name NuGet -Force -ErrorAction SilentlyContinue)) {
-            Install-PackageProvider -Name NuGet -Force -Confirm:$false
+        if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+            Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
             Write-Host "NuGet-pakketprovider geinstalleerd." -ForegroundColor Green
         } else {
             Write-Host "NuGet-pakketprovider is al geinstalleerd." -ForegroundColor Green
@@ -62,7 +21,7 @@ function Ensure-Environment {
         # Zorg ervoor dat het Get-WindowsAutopilotInfo-script is geinstalleerd
         Write-Host "Zorgen dat het Get-WindowsAutopilotInfo-script is geinstalleerd..." -ForegroundColor Cyan
         if (-not (Get-InstalledScript -Name Get-WindowsAutopilotInfo -ErrorAction SilentlyContinue)) {
-            Install-Script -Name Get-WindowsAutopilotInfo -Force -Confirm:$false
+            Install-Script -Name Get-WindowsAutopilotInfo -Force -Scope CurrentUser
             Write-Host "Get-WindowsAutopilotInfo-script geinstalleerd." -ForegroundColor Green
         } else {
             Write-Host "Get-WindowsAutopilotInfo-script is al geinstalleerd." -ForegroundColor Green
