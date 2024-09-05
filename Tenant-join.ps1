@@ -1,3 +1,54 @@
+# Controleer of er beheerdersrechten zijn en start opnieuw met verhoogde rechten indien nodig
+function Ensure-RunAsAdministrator {
+    try {
+        $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+        $currentPrincipal = New-Object Security.Principal.WindowsPrincipal($currentUser)
+        
+        if (!$currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+            Write-Host "Dit script vereist beheerdersrechten. Probeer opnieuw te starten als beheerder..." -ForegroundColor Yellow
+            $startInfo = New-Object System.Diagnostics.ProcessStartInfo "powershell"
+            $startInfo.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+            $startInfo.Verb = "runas"
+            [System.Diagnostics.Process]::Start($startInfo) | Out-Null
+            exit
+        }
+    } catch {
+        Write-Host "`n!! FOUT: Kan bevoegdheden niet controleren of verhogen. Voer het script als beheerder uit. !!" -ForegroundColor Red
+        Read-Host "`nDruk op ENTER om af te sluiten..."
+        exit
+    }
+}
+
+# Schakel strikte foutafhandeling in
+$ErrorActionPreference = "Stop"
+
+# Functie om te testen op een actieve internetverbinding met automatische herhaling
+function Test-InternetConnection {
+    param (
+        [int]$retries = 3,
+        [int]$delay = 5
+    )
+
+    $url = "http://www.msftconnecttest.com/connecttest.txt"
+    
+    for ($i = 1; $i -le $retries; $i++) {
+        try {
+            Write-Host "Controleren op een actieve internetverbinding... (Poging $i van $retries)" -ForegroundColor Cyan
+            $request = [System.Net.WebRequest]::Create($url)
+            $request.Timeout = 5000
+            $request.Method = "HEAD"
+            $request.GetResponse().Close()
+            return $true
+        } catch {
+            Write-Host "Geen internetverbinding gedetecteerd. Probeer opnieuw over $delay seconden..." -ForegroundColor Yellow
+            Start-Sleep -Seconds $delay
+        }
+    }
+
+    Write-Host "`n!! FOUT: Geen internetverbinding gedetecteerd na meerdere pogingen. !!" -ForegroundColor Red
+    return $false
+}
+
 # Functie om ervoor te zorgen dat de NuGet-pakketprovider en het script zijn geinstalleerd
 function Ensure-Environment {
     try {
@@ -12,7 +63,7 @@ function Ensure-Environment {
         # Zorg ervoor dat de NuGet-pakketprovider is geinstalleerd
         Write-Host "Zorgen dat NuGet-pakketprovider is geinstalleerd..." -ForegroundColor Cyan
         if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-            Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+            Install-PackageProvider -Name NuGet -Force -Confirm:$false
             Write-Host "NuGet-pakketprovider geinstalleerd." -ForegroundColor Green
         } else {
             Write-Host "NuGet-pakketprovider is al geinstalleerd." -ForegroundColor Green
@@ -20,14 +71,14 @@ function Ensure-Environment {
 
         # Zorg ervoor dat het Get-WindowsAutopilotInfo-script is geinstalleerd
         Write-Host "Zorgen dat het Get-WindowsAutopilotInfo-script is geinstalleerd..." -ForegroundColor Cyan
-        if (-not (Get-InstalledScript -Name Get-WindowsAutopilotInfo -ErrorAction SilentlyContinue)) {
-            Install-Script -Name Get-WindowsAutopilotInfo -Force -Scope CurrentUser
+        if (-not (Get-Command -Name Get-WindowsAutopilotInfo -ErrorAction SilentlyContinue)) {
+            Install-Script -Name Get-WindowsAutopilotInfo -Force
             Write-Host "Get-WindowsAutopilotInfo-script geinstalleerd." -ForegroundColor Green
         } else {
             Write-Host "Get-WindowsAutopilotInfo-script is al geinstalleerd." -ForegroundColor Green
         }
     } catch {
-        Write-Host "!! FOUT: De omgeving instellen is mislukt. $($_.Exception.Message) !!" -ForegroundColor Red
+        Write-Host "`n!! FOUT: De omgeving instellen is mislukt. $($_.Exception.Message) !!" -ForegroundColor Red
         exit
     }
 }
@@ -40,11 +91,11 @@ function Get-AutopilotInfo {
     )
 
     try {
-        Write-Host "Windows Autopilot-informatie ophalen voor GroupTag: $GroupTag" -ForegroundColor Cyan
+        Write-Host "`nWindows Autopilot-informatie ophalen voor GroupTag: $GroupTag" -ForegroundColor Cyan
         Get-WindowsAutopilotInfo -Online -GroupTag $GroupTag
-        Write-Host "Voltooid ophalen van Autopilot-informatie." -ForegroundColor Green
+        Write-Host "`nVoltooid ophalen van Autopilot-informatie." -ForegroundColor Green
     } catch {
-        Write-Host "!! FOUT: Het ophalen van Autopilot-informatie is mislukt. $($_.Exception.Message) !!" -ForegroundColor Red
+        Write-Host "`n!! FOUT: Het ophalen van Autopilot-informatie is mislukt. $($_.Exception.Message) !!" -ForegroundColor Red
     }
 }
 
@@ -56,7 +107,7 @@ function Display-Menu {
 
     do {
         Clear-Host
-        Write-Host "Maak een keuze:" -ForegroundColor Cyan
+        Write-Host "`nMaak een keuze:`n" -ForegroundColor Cyan
 
         foreach ($key in $groupTags.Keys | Sort-Object) {
             $groupTag = $groupTags[$key]
@@ -68,12 +119,11 @@ function Display-Menu {
         if ($choice -eq 'H') {
             Show-Help
         } elseif ($groupTags.ContainsKey($choice)) {
-            Clear-Host
             Get-AutopilotInfo -GroupTag $groupTags[$choice].GroupTag
             break
         } else {
-            Write-Host "!! FOUT: Ongeldige invoer. Voer een nummer in dat overeenkomt met uw keuze. !!" -ForegroundColor Red
-            Read-Host "Druk op ENTER om opnieuw te proberen..."
+            Write-Host "`n!! FOUT: Ongeldige invoer. Voer een nummer in dat overeenkomt met uw keuze. !!" -ForegroundColor Red
+            Read-Host "`nDruk op ENTER om opnieuw te proberen..."
         }
     } while ($true)
 }
@@ -81,15 +131,15 @@ function Display-Menu {
 # Functie om helpinformatie weer te geven
 function Show-Help {
     Clear-Host
-    Write-Host "Help - Uitleg van opties:`n" -ForegroundColor Yellow
+    Write-Host "`nHelp - Uitleg van opties:`n" -ForegroundColor Yellow
     foreach ($key in $groupTags.Keys | Sort-Object) {
         $groupTag = $groupTags[$key]
         Write-Host ("{0}: {1} - {2}" -f $key, $groupTag.Name, $groupTag.Description) -ForegroundColor $groupTag.Color
     }
-    Read-Host "Druk op ENTER om terug te keren naar het hoofdmenu..."
+    Read-Host "`nDruk op ENTER om terug te keren naar het hoofdmenu..."
 }
 
-# Groeptags definieren in een apart gedeelte voor eenvoudige aanpassing
+# Groeptags definiëren in een apart gedeelte voor eenvoudige aanpassing
 $groupTags = @{
     "1" = @{ Name = "Windows 10: Standaard Laptop (persoonlijk)"; GroupTag = "AUP_W10_User_Personal"; Color = "Red"; Description = "Autopilot-instelling voor een persoonlijke gebruiker" }
     "2" = @{ Name = "Windows 10: Gedeelde Laptop (gedeeld)"; GroupTag = "AUP_W10_Device_Shared"; Color = "Red"; Description = "Autopilot-instelling voor gedeelde apparaten" }
@@ -104,7 +154,7 @@ $groupTags = @{
 Ensure-RunAsAdministrator
 
 if (-not (Test-InternetConnection)) {
-    Read-Host "Druk op ENTER om af te sluiten..."
+    Read-Host "`nDruk op ENTER om af te sluiten..."
     exit
 }
 
@@ -112,4 +162,4 @@ Ensure-Environment
 Display-Menu -groupTags $groupTags
 
 # Pauzeren voordat u afsluit
-Read-Host "Druk op ENTER om af te sluiten..."
+Read-Host "`nDruk op ENTER om door te gaan..."
