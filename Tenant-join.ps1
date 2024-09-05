@@ -12,7 +12,7 @@ function Ensure-Environment {
         # Zorg ervoor dat de NuGet-pakketprovider is geinstalleerd
         Write-Host "Zorgen dat NuGet-pakketprovider is geinstalleerd..." -ForegroundColor Cyan
         if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-            Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
+            Install-PackageProvider -Name NuGet -Force -Confirm:$false -Scope CurrentUser
             Write-Host "NuGet-pakketprovider geinstalleerd." -ForegroundColor Green
         } else {
             Write-Host "NuGet-pakketprovider is al geinstalleerd." -ForegroundColor Green
@@ -21,7 +21,7 @@ function Ensure-Environment {
         # Zorg ervoor dat het Get-WindowsAutopilotInfo-script is geinstalleerd
         Write-Host "Zorgen dat het Get-WindowsAutopilotInfo-script is geinstalleerd..." -ForegroundColor Cyan
         if (-not (Get-InstalledScript -Name Get-WindowsAutopilotInfo -ErrorAction SilentlyContinue)) {
-            Install-Script -Name Get-WindowsAutopilotInfo -Force -Scope CurrentUser
+            Install-Script -Name Get-WindowsAutopilotInfo -Force -Confirm:$false -Scope CurrentUser
             Write-Host "Get-WindowsAutopilotInfo-script geinstalleerd." -ForegroundColor Green
         } else {
             Write-Host "Get-WindowsAutopilotInfo-script is al geinstalleerd." -ForegroundColor Green
