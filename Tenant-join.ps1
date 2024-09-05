@@ -1,20 +1,9 @@
 # Controleer of er beheerdersrechten zijn en start opnieuw met verhoogde rechten indien nodig
 function Ensure-RunAsAdministrator {
-    try {
-        $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-        $currentPrincipal = New-Object Security.Principal.WindowsPrincipal($currentUser)
-        
-        if (!$currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-            Write-Host "Dit script vereist beheerdersrechten. Probeer opnieuw te starten als beheerder..." -ForegroundColor Yellow
-            $startInfo = New-Object System.Diagnostics.ProcessStartInfo "powershell"
-            $startInfo.Arguments = "-NoProfile -ExecutionPolicy Bypass -File "$PSCommandPath""
-            $startInfo.Verb = "runas"
-            [System.Diagnostics.Process]::Start($startInfo) | Out-Null
-            exit
-        }
-    } catch {
-        Write-Host "!! FOUT: Kan bevoegdheden niet controleren of verhogen. Voer het script als beheerder uit. !!" -ForegroundColor Red
-        Read-Host "nDruk op ENTER om af te sluiten..."
+    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    if (-not $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Write-Host "Dit script vereist beheerdersrechten. Probeer opnieuw te starten als beheerder..." -ForegroundColor Yellow
+        Start-Process powershell.exe "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
         exit
     }
 }
@@ -37,7 +26,8 @@ function Test-InternetConnection {
             $request = [System.Net.WebRequest]::Create($url)
             $request.Timeout = 5000
             $request.Method = "HEAD"
-            $request.GetResponse().Close()
+            $response = $request.GetResponse()
+            $response.Close()
             return $true
         } catch {
             Write-Host "Geen internetverbinding gedetecteerd. Probeer opnieuw over $delay seconden..." -ForegroundColor Yellow
@@ -52,7 +42,7 @@ function Test-InternetConnection {
 # Functie om ervoor te zorgen dat de NuGet-pakketprovider en het script zijn geinstalleerd
 function Ensure-Environment {
     try {
-        Write-Host "nDe omgeving instellen..." -ForegroundColor Cyan
+        Write-Host "`nDe omgeving instellen..." -ForegroundColor Cyan
         
         # Stel het uitvoeringsbeleid in voor de sessie
         Set-ExecutionPolicy Bypass -Scope Process -Force
@@ -71,7 +61,7 @@ function Ensure-Environment {
 
         # Zorg ervoor dat het Get-WindowsAutopilotInfo-script is geinstalleerd
         Write-Host "Zorgen dat het Get-WindowsAutopilotInfo-script is geinstalleerd..." -ForegroundColor Cyan
-        if (-not (Get-Command -Name Get-WindowsAutopilotInfo -ErrorAction SilentlyContinue)) {
+        if (-not (Get-InstalledScript -Name Get-WindowsAutopilotInfo -ErrorAction SilentlyContinue)) {
             Install-Script -Name Get-WindowsAutopilotInfo -Force -Confirm:$false
             Write-Host "Get-WindowsAutopilotInfo-script geinstalleerd." -ForegroundColor Green
         } else {
@@ -132,7 +122,7 @@ function Display-Menu {
 # Functie om helpinformatie weer te geven
 function Show-Help {
     Clear-Host
-    Write-Host "Help - Uitleg van opties:n" -ForegroundColor Yellow
+    Write-Host "Help - Uitleg van opties:`n" -ForegroundColor Yellow
     foreach ($key in $groupTags.Keys | Sort-Object) {
         $groupTag = $groupTags[$key]
         Write-Host ("{0}: {1} - {2}" -f $key, $groupTag.Name, $groupTag.Description) -ForegroundColor $groupTag.Color
@@ -163,4 +153,4 @@ Ensure-Environment
 Display-Menu -groupTags $groupTags
 
 # Pauzeren voordat u afsluit
-Read-Host "Druk op ENTER om door te gaan..."
+Read-Host "Druk op ENTER om af te sluiten..."
