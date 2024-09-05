@@ -63,11 +63,12 @@ function Ensure-Environment {
         # Zorg ervoor dat de NuGet-pakketprovider is geinstalleerd
         Write-Host "Zorgen dat NuGet-pakketprovider is geinstalleerd..." -ForegroundColor Cyan
         if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
-            Install-PackageProvider -Name NuGet -Force -Confirm:$false
+            Install-PackageProvider -Name NuGet -ForceBootstrap -Force -Confirm:$false
             Write-Host "NuGet-pakketprovider geinstalleerd." -ForegroundColor Green
         } else {
             Write-Host "NuGet-pakketprovider is al geinstalleerd." -ForegroundColor Green
         }
+
 
         # Zorg ervoor dat het Get-WindowsAutopilotInfo-script is geinstalleerd
         Write-Host "Zorgen dat het Get-WindowsAutopilotInfo-script is geinstalleerd..." -ForegroundColor Cyan
