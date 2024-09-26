@@ -80,14 +80,16 @@ function Ensure-Environment {
             Write-Host "NuGet-pakketprovider is al geïnstalleerd." -ForegroundColor Green
         }
 
-        # Zorg ervoor dat het Get-WindowsAutopilotInfo-script is geïnstalleerd
-        Write-Host "Zorgen dat het Get-WindowsAutopilotInfo-script is geïnstalleerd..." -ForegroundColor Cyan
-        if (-not (Get-Command -Name Get-WindowsAutopilotInfo -ErrorAction SilentlyContinue)) {
-            Install-Script -Name Get-WindowsAutopilotInfo -Force
-            Write-Host "Get-WindowsAutopilotInfo-script geïnstalleerd." -ForegroundColor Green
+        # Zorg ervoor dat de WindowsAutopilotIntune-module is geïnstalleerd
+        Write-Host "Zorgen dat de WindowsAutopilotIntune-module is geïnstalleerd..." -ForegroundColor Cyan
+        if (-not (Get-Module -ListAvailable -Name WindowsAutopilotIntune)) {
+            Install-Module -Name WindowsAutopilotIntune -Force
+            Write-Host "WindowsAutopilotIntune-module geïnstalleerd." -ForegroundColor Green
         } else {
-            Write-Host "Get-WindowsAutopilotInfo-script is al geïnstalleerd." -ForegroundColor Green
+            Write-Host "WindowsAutopilotIntune-module is al geïnstalleerd." -ForegroundColor Green
         }
+        Import-Module -Name WindowsAutopilotIntune -Force
+
     } catch {
         Write-Host "`n!! FOUT: De omgeving instellen is mislukt. $($_.Exception.Message) !!" -ForegroundColor Red
         exit
