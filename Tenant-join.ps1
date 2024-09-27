@@ -50,6 +50,7 @@ function Test-InternetConnection {
 }
 
 # Functie om ervoor te zorgen dat de NuGet-pakketprovider en het script zijn geinstalleerd
+# Functie om ervoor te zorgen dat de NuGet-pakketprovider en het script zijn geinstalleerd
 function Ensure-Environment {
     try {
         Write-Host "`nDe omgeving instellen..." -ForegroundColor Cyan
@@ -62,13 +63,16 @@ function Ensure-Environment {
         
         # Zorg ervoor dat de NuGet-pakketprovider is geinstalleerd
         Write-Host "Zorgen dat NuGet-pakketprovider is geinstalleerd..." -ForegroundColor Cyan
-        if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) {
+        if (-not (Get-PackageProvider -Name NuGet -ListAvailable -ErrorAction SilentlyContinue)) {
             Install-PackageProvider -Name NuGet -ForceBootstrap -Force -Confirm:$false
             Write-Host "NuGet-pakketprovider geinstalleerd." -ForegroundColor Green
         } else {
             Write-Host "NuGet-pakketprovider is al geinstalleerd." -ForegroundColor Green
         }
 
+        # Stel de PSGallery repository in op Trusted
+        Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+        Write-Host "PSGallery repository is ingesteld als Trusted." -ForegroundColor Green
 
         # Zorg ervoor dat het Get-WindowsAutopilotInfo-script is geinstalleerd
         Write-Host "Zorgen dat het Get-WindowsAutopilotInfo-script is geinstalleerd..." -ForegroundColor Cyan
@@ -140,7 +144,7 @@ function Show-Help {
     Read-Host "`nDruk op ENTER om terug te keren naar het hoofdmenu..."
 }
 
-# Groeptags definiëren in een apart gedeelte voor eenvoudige aanpassing
+# Groeptags definieren in een apart gedeelte voor eenvoudige aanpassing
 $groupTags = @{
     "1" = @{ Name = "Windows 10: Standaard Laptop (persoonlijk)"; GroupTag = "AUP_W10_User_Personal"; Color = "Red"; Description = "Autopilot-instelling voor een persoonlijke gebruiker" }
     "2" = @{ Name = "Windows 10: Gedeelde Laptop (gedeeld)"; GroupTag = "AUP_W10_Device_Shared"; Color = "Red"; Description = "Autopilot-instelling voor gedeelde apparaten" }
