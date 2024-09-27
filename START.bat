@@ -26,6 +26,3 @@ if not exist "Tenant-join.ps1" (
 REM Voer PowerShell-script uit
 echo Bezig met uitvoeren van PowerShell-script...
 powershell -ExecutionPolicy Bypass -File .\Tenant-join.ps1
-
-echo Scriptuitvoering voltooid.
-pause
